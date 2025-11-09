@@ -2,6 +2,6 @@ Flask>=3.0
 gunicorn>=21.2
 cryptography>=42.0
 transformers>=4.44
+torch==2.4.1+cpu ; platform_system!="Darwin"
 requests>=2.32
 base58>=2.1.1
-
