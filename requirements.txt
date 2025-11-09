@@ -3,4 +3,5 @@ gunicorn>=21.2
 cryptography>=42.0
 transformers>=4.44
 requests>=2.32
+base58>=2.1.1
 
