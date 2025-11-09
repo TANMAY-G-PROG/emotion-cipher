@@ -1,0 +1,69 @@
+# ================================
+# Python
+# ================================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+ENV/
+env/
+.venv/
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ================================
+# Flask / App specific
+# ================================
+instance/
+.webassets-cache
+*.db
+*.sqlite3
+
+# ================================
+# Logs and caches
+# ================================
+*.log
+*.pot
+*.mo
+*.pyc
+.cache/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ================================
+# IDE and editor settings
+# ================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ================================
+# OS-generated files
+# ================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ================================
+# Environment variables or secrets
+# ================================
+.env
+.env.*
+*.pem

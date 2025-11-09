@@ -1,0 +1,669 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Emotion Cipher</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h1>Emotion Cipher 🔐</h1>
+
+  <textarea id="message" rows="4" placeholder="Type your message..."></textarea><br>
+  <input type="password" id="passphrase" placeholder="Enter passphrase"><br>
+
+  <button onclick="encryptMsg()">Encrypt</button>
+  <button onclick="decryptMsg()">Decrypt</button>
+
+  <pre id="output"></pre>
+
+  <script>
+    async function encryptMsg() {
+      const message = document.getElementById('message').value;
+      const passphrase = document.getElementById('passphrase').value;
+
+      const res = await fetch('/encrypt', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message, passphrase})
+      });
+      const data = await res.json();
+      document.getElementById('output').textContent =
+        "Encrypted Text:\n" + data.encrypted_text.replace(/\n/g, '') +
+        "\n\nDetected Emotion:\n" + JSON.stringify(data.detected_emotions, null, 2);
+    }
+
+    async function decryptMsg() {
+      const encrypted_text = prompt("Paste the encrypted text:");
+      const passphrase = document.getElementById('passphrase').value;
+
+      const res = await fetch('/decrypt', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({encrypted_text, passphrase})
+      });
+      const data = await res.json();
+      document.getElementById('output').textContent =
+        "Original Message:\n" + data.original_message +
+        "\n\nDetected Emotion:\n" + JSON.stringify(data.detected_emotions, null, 2);
+    }
+  </script>
+</body>
+</html> -->
+
+<!-- <!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Emotion Cipher 🔐</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h1>Emotion Cipher 🔐</h1>
+
+  <textarea id="message" rows="5" placeholder="Type your message..."></textarea>
+  <input id="passphrase" type="password" placeholder="Enter passphrase (e.g., demo123)" />
+
+  <label for="token">Encrypted token (auto-filled after Encrypt; or paste here to Decrypt):</label>
+  <input id="token" type="text" placeholder="EC… full token" />
+
+  <div class="row">
+    <button onclick="encryptMsg()">Encrypt</button>
+    <button class="secondary" onclick="decryptMsg()">Decrypt</button>
+  </div>
+
+  <pre id="output">Ready.</pre>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const show = (obj) => { $('output').textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2); };
+
+    async function postJSON(url, payload) {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = { error: text }; }
+      if (!res.ok) throw data;
+      return data;
+    }
+
+    async function encryptMsg() {
+      const message = $('message').value.trim();
+      const passphrase = $('passphrase').value;
+      if (!message) return show('Please enter a message.');
+
+      try {
+        const data = await postJSON('/encrypt', { message, passphrase });
+        const token = (data.encrypted_text || '').replace(/\s+/g, '');
+        $('token').value = token;
+        show({ 'Encrypted Text': token, 'Detected Emotion': data.detected_emotions });
+      } catch (e) {
+        show(e);
+      }
+    }
+
+    async function decryptMsg() {
+      const token = $('token').value.trim().replace(/\s+/g, '');
+      const passphrase = $('passphrase').value;
+      if (!token) return show('Paste the encrypted token into the token field.');
+      if (!token.startsWith('EC')) return show('Invalid token: must start with "EC".');
+
+      try {
+        const data = await postJSON('/decrypt', { encrypted_text: token, passphrase });
+        show({
+          'Original Message': data.original_message,
+          'Detected Emotion': data.detected_emotions,
+          'Signature OK': data.signature_ok
+        });
+      } catch (e) {
+        show(e);
+      }
+    }
+  </script>
+</body>
+</html> -->
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emotion Cipher 🔐</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 700px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      text-align: center;
+      color: #667eea;
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 0.95rem;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      color: #333;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+
+    textarea, input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    textarea:focus, input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 15px;
+      margin: 25px 0;
+    }
+
+    button {
+      flex: 1;
+      padding: 16px 28px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-encrypt {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-encrypt:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+    }
+
+    .btn-decrypt {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+    }
+
+    .btn-decrypt:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245, 87, 108, 0.5);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .output-section {
+      margin-top: 30px;
+      padding: 25px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      border-radius: 16px;
+      min-height: 100px;
+      display: none;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .output-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .output-title {
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .result-item {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      border-left: 4px solid #667eea;
+      animation: slideInLeft 0.3s ease-out;
+    }
+
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .result-label {
+      font-weight: 600;
+      color: #555;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .result-value {
+      color: #333;
+      font-size: 1rem;
+      word-break: break-all;
+      line-height: 1.6;
+    }
+
+    .emotion-tags {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .emotion-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      animation: popIn 0.3s ease-out;
+    }
+
+    @keyframes popIn {
+      0% {
+        transform: scale(0);
+      }
+      50% {
+        transform: scale(1.1);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .emotion-icon {
+      font-size: 1.2rem;
+    }
+
+    .signature-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+
+    .signature-valid {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .signature-invalid {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .loading.active {
+      display: block;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 15px;
+      border-radius: 10px;
+      border-left: 4px solid #f5c6cb;
+      margin-top: 15px;
+      animation: shake 0.5s ease-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
+    .copy-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background: #5568d3;
+    }
+
+    .copy-btn.copied {
+      background: #28a745;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 25px;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .button-group {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 Emotion Cipher</h1>
+    <p class="subtitle">Encrypt your messages with emotional intelligence</p>
+
+    <div class="input-group">
+      <label for="message">✍️ Your Message</label>
+      <textarea id="message" placeholder="Type your message here..."></textarea>
+    </div>
+
+    <div class="input-group">
+      <label for="passphrase">🔑 Passphrase</label>
+      <input id="passphrase" type="password" placeholder="Enter a secure passphrase" />
+    </div>
+
+    <div class="input-group">
+      <label for="token">📦 Encrypted Token (for decryption)</label>
+      <input id="token" type="text" placeholder="Paste encrypted token here to decrypt" />
+    </div>
+
+    <div class="button-group">
+      <button class="btn-encrypt" onclick="encryptMsg()">🔒 Encrypt</button>
+      <button class="btn-decrypt" onclick="decryptMsg()">🔓 Decrypt</button>
+    </div>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      Processing...
+    </div>
+
+    <div class="output-section" id="output">
+      <!-- Results will be displayed here -->
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const output = $('output');
+    const loading = $('loading');
+
+    const emotionIcons = {
+      'JOY': '😊',
+      'SADNESS': '😢',
+      'ANGER': '😠',
+      'FEAR': '😨',
+      'DISGUST': '🤢',
+      'SURPRISE': '😲'
+    };
+
+    function showLoading(show) {
+      loading.classList.toggle('active', show);
+      document.querySelectorAll('button').forEach(btn => btn.disabled = show);
+    }
+
+    function showOutput(html) {
+      output.innerHTML = html;
+      output.classList.add('active');
+    }
+
+    function showError(message) {
+      showOutput(`<div class="error-message">❌ ${message}</div>`);
+    }
+
+    async function postJSON(url, payload) {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      let data;
+      try { 
+        data = JSON.parse(text); 
+      } catch { 
+        data = { error: text }; 
+      }
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+      return data;
+    }
+
+    function formatEmotions(emotions) {
+      return emotions.map(([emotion, confidence]) => {
+        const icon = emotionIcons[emotion] || '🎭';
+        const percent = (confidence * 100).toFixed(1);
+        return `<div class="emotion-tag">${icon} ${emotion} (${percent}%)</div>`;
+      }).join('');
+    }
+
+    function copyToClipboard(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
+
+    async function encryptMsg() {
+      const message = $('message').value.trim();
+      const passphrase = $('passphrase').value;
+
+      if (!message) {
+        showError('Please enter a message to encrypt');
+        return;
+      }
+
+      showLoading(true);
+
+      try {
+        const data = await postJSON('/encrypt', { message, passphrase });
+        const token = (data.encrypted_text || '').replace(/\s+/g, '');
+        $('token').value = token;
+
+        const html = `
+          <div class="output-title">✅ Encryption Successful</div>
+          
+          <div class="result-item">
+            <div class="result-label">Encrypted Token</div>
+            <div class="result-value">${token}</div>
+            <button class="copy-btn" onclick="copyToClipboard('${token}', this)">📋 Copy Token</button>
+          </div>
+
+          <div class="result-item">
+            <div class="result-label">Detected Emotions</div>
+            <div class="emotion-tags">
+              ${formatEmotions(data.detected_emotions)}
+            </div>
+          </div>
+        `;
+
+        showOutput(html);
+      } catch (e) {
+        showError(e.message || 'Encryption failed');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    async function decryptMsg() {
+      const token = $('token').value.trim().replace(/\s+/g, '');
+      const passphrase = $('passphrase').value;
+
+      if (!token) {
+        showError('Please paste an encrypted token');
+        return;
+      }
+
+      if (!token.startsWith('EC')) {
+        showError('Invalid token: must start with "EC"');
+        return;
+      }
+
+      showLoading(true);
+
+      try {
+        const data = await postJSON('/decrypt', { encrypted_text: token, passphrase });
+        
+        const signatureBadge = data.signature_ok 
+          ? '<span class="signature-badge signature-valid">✓ Signature Valid</span>'
+          : '<span class="signature-badge signature-invalid">⚠ Signature Invalid</span>';
+
+        const html = `
+          <div class="output-title">🔓 Decryption Successful</div>
+          
+          <div class="result-item">
+            <div class="result-label">Original Message</div>
+            <div class="result-value">${data.original_message}</div>
+            <button class="copy-btn" onclick="copyToClipboard('${data.original_message.replace(/'/g, "\\'")}', this)">📋 Copy Message</button>
+          </div>
+
+          <div class="result-item">
+            <div class="result-label">Detected Emotions ${signatureBadge}</div>
+            <div class="emotion-tags">
+              ${formatEmotions(data.detected_emotions)}
+            </div>
+          </div>
+        `;
+
+        showOutput(html);
+      } catch (e) {
+        showError(e.message || 'Decryption failed. Check your passphrase and token.');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // Allow Enter key to encrypt
+    $('message').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && e.ctrlKey) {
+        encryptMsg();
+      }
+    });
+  </script>
+</body>
+</html>
+
