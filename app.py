@@ -1,34 +1,3 @@
-# from flask import Flask, render_template, request, jsonify
-# from emotion_cipher import encrypt_message, decrypt_message
-
-# app = Flask(__name__)
-
-# @app.route('/')
-# def home():
-#     return render_template('index.html')
-
-# @app.route('/encrypt', methods=['POST'])
-# def encrypt():
-#     data = request.get_json()
-#     msg = data.get("message", "")
-#     pw = data.get("passphrase", "default-key")
-#     result = encrypt_message(msg, pw)
-#     return jsonify(result)
-
-# @app.route('/decrypt', methods=['POST'])
-# def decrypt():
-#     data = request.get_json()
-#     token = data.get("encrypted_text", "").strip().replace("\n", "")
-#     pw    = data.get("passphrase", "default-key")
-#     try:
-#         result = decrypt_message(token, pw)
-#         return jsonify(result)
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 400
-
-# if __name__ == '__main__':
-#     app.run(debug=True)
-
 from flask import Flask, render_template, request, jsonify
 from emotion_cipher import encrypt_message, decrypt_message
 
@@ -67,6 +36,9 @@ def api_decrypt():
         # Wrong passphrase or corrupted token commonly raises InvalidTag
         return jsonify({"error": str(e)}), 400
 
+import os
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
 
